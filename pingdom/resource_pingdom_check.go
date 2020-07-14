@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/russellcardullo/go-pingdom/pingdom"
+	"github.com/justincmoy/go-pingdom/pingdom"
 )
 
 func resourcePingdomCheck() *schema.Resource {
@@ -187,6 +187,17 @@ func resourcePingdomCheck() *schema.Resource {
 				Optional: true,
 				ForceNew: false,
 			},
+			"verifycertificate": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: false,
+				Default:  true,
+			},
+			"ssldowndaysbefore": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
 		},
 	}
 }
@@ -216,6 +227,8 @@ type commonCheckParams struct {
 	ProbeFilters             string
 	StringToSend             string
 	StringToExpect           string
+	VerifyCertificate        bool
+	SSLDownDaysBefore        int
 }
 
 func sortString(input string, seperator string) string {
@@ -341,6 +354,14 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 		checkParams.StringToExpect = v.(string)
 	}
 
+	if v, ok := d.GetOk("verifycertificate"); ok {
+		checkParams.VerifyCertificate = v.(bool)
+	}
+
+	if v, ok := d.GetOk("ssldowndaysbefore"); ok {
+		checkParams.SSLDownDaysBefore = v.(int)
+	}
+
 	checkType := d.Get("type")
 	switch checkType {
 	case "http":
@@ -367,6 +388,8 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 			ProbeFilters:             checkParams.ProbeFilters,
 			UserIds:                  checkParams.UserIds,
 			TeamIds:                  checkParams.TeamIds,
+			VerifyCertificate:        checkParams.VerifyCertificate,
+			SSLDownDaysBefore:        checkParams.SSLDownDaysBefore,
 		}, nil
 	case "ping":
 		return &pingdom.PingCheck{
@@ -535,6 +558,8 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("shouldcontain", ck.Type.HTTP.ShouldContain)
 		d.Set("shouldnotcontain", ck.Type.HTTP.ShouldNotContain)
 		d.Set("postdata", ck.Type.HTTP.PostData)
+		d.Set("verifycertificate", ck.Type.HTTP.VerifyCertificate)
+		d.Set("ssldowndaysbefore", ck.Type.HTTP.SSLDownDaysBefore)
 
 		if v, ok := ck.Type.HTTP.RequestHeaders["User-Agent"]; ok {
 			if strings.HasPrefix(v, "Pingdom.com_bot_version_") {

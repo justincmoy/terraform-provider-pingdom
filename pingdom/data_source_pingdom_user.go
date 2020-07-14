@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/russellcardullo/go-pingdom/pingdom"
+	"github.com/justincmoy/go-pingdom/pingdom"
 )
 
 func dataSourcePingdomUser() *schema.Resource {
